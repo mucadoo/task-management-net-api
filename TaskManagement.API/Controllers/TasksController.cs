@@ -1,0 +1,60 @@
+using Microsoft.AspNetCore.Mvc;
+using TaskManagement.Application.DTOs;
+using TaskManagement.Application.Interfaces;
+using TaskStatus = TaskManagement.Domain.Enums.TaskStatus;
+
+namespace TaskManagement.API.Controllers;
+
+[ApiController]
+[Route("api/tasks")]
+public class TasksController : ControllerBase
+{
+    private readonly ITaskService _taskService;
+    private readonly ILogger<TasksController> _logger;
+
+    public TasksController(ITaskService taskService, ILogger<TasksController> logger)
+    {
+        _taskService = taskService;
+        _logger = logger;
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<IEnumerable<TaskResponse>>> GetAll([FromQuery] TaskStatus? status, [FromQuery] DateTime? dueDate, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("HTTP GET api/tasks");
+        var tasks = await _taskService.GetAllAsync(status, dueDate, cancellationToken);
+        return Ok(tasks);
+    }
+
+    [HttpGet("{id:guid}")]
+    public async Task<ActionResult<TaskResponse>> GetById(Guid id, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("HTTP GET api/tasks/{Id}", id);
+        var task = await _taskService.GetByIdAsync(id, cancellationToken);
+        return Ok(task);
+    }
+
+    [HttpPost]
+    public async Task<ActionResult<TaskResponse>> Create([FromBody] CreateTaskRequest request, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("HTTP POST api/tasks");
+        var task = await _taskService.CreateAsync(request, cancellationToken);
+        return CreatedAtAction(nameof(GetById), new { id = task.Id }, task);
+    }
+
+    [HttpPut("{id:guid}")]
+    public async Task<ActionResult<TaskResponse>> Update(Guid id, [FromBody] UpdateTaskRequest request, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("HTTP PUT api/tasks/{Id}", id);
+        var task = await _taskService.UpdateAsync(id, request, cancellationToken);
+        return Ok(task);
+    }
+
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("HTTP DELETE api/tasks/{Id}", id);
+        await _taskService.DeleteAsync(id, cancellationToken);
+        return NoContent();
+    }
+}
