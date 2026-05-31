@@ -23,8 +23,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<ITaskRepository, TaskRepository>();
 builder.Services.AddScoped<ITaskService, TaskService>();
 
-builder.Services.AddValidatorsFromAssemblyContaining<CreateTaskRequestValidator>();
-
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
