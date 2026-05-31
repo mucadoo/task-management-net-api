@@ -19,11 +19,11 @@ public class TasksController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<IEnumerable<TaskResponse>>> GetAll([FromQuery] TaskStatus? status, [FromQuery] DateTime? dueDate, CancellationToken cancellationToken)
+    public async Task<ActionResult<PagedResponse<TaskResponse>>> GetAll([FromQuery] TaskStatus? status, [FromQuery] DateTime? dueDate, [FromQuery] PagedRequest paging, CancellationToken cancellationToken)
     {
         _logger.LogInformation("HTTP GET api/tasks");
-        var tasks = await _taskService.GetAllAsync(status, dueDate, cancellationToken);
-        return Ok(tasks);
+        var result = await _taskService.GetAllAsync(status, dueDate, paging, cancellationToken);
+        return Ok(result);
     }
 
     [HttpGet("{id:guid}")]

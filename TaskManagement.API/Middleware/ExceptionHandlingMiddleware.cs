@@ -21,24 +21,38 @@ public class ExceptionHandlingMiddleware
         {
             await _next(context);
         }
+        catch (TaskValidationException ex)
+        {
+            _logger.LogWarning(ex.Message);
+            await WriteProblemDetails(context, (int)HttpStatusCode.BadRequest, "Validation Error", ex.Message);
+        }
         catch (TaskNotFoundException ex)
         {
             _logger.LogWarning(ex.Message);
-            await HandleExceptionAsync(context, HttpStatusCode.NotFound, ex.Message);
+            await WriteProblemDetails(context, (int)HttpStatusCode.NotFound, "Not Found", ex.Message);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "An unexpected error occurred.");
-            await HandleExceptionAsync(context, HttpStatusCode.InternalServerError, "An unexpected error occurred.");
+            await WriteProblemDetails(context, (int)HttpStatusCode.InternalServerError, "Internal Server Error", "An unexpected error occurred.");
         }
     }
 
-    private static async Task HandleExceptionAsync(HttpContext context, HttpStatusCode statusCode, string message)
+    private static async Task WriteProblemDetails(HttpContext context, int status, string title, string detail)
     {
         context.Response.ContentType = "application/json";
-        context.Response.StatusCode = (int)statusCode;
+        context.Response.StatusCode = status;
 
-        var result = JsonSerializer.Serialize(new { error = message });
+        var problemDetails = new
+        {
+            type = "",
+            title = title,
+            status = status,
+            detail = detail,
+            traceId = context.TraceIdentifier
+        };
+
+        var result = JsonSerializer.Serialize(problemDetails);
         await context.Response.WriteAsync(result);
     }
 }
