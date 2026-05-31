@@ -15,7 +15,7 @@ public class TaskRepository : ITaskRepository
         _context = context;
     }
 
-    public async Task<IEnumerable<TaskEntity>> GetAllAsync(TaskStatus? status, DateTime? dueDate, CancellationToken cancellationToken = default)
+    public async Task<(IEnumerable<TaskEntity> Items, int TotalCount)> GetAllAsync(TaskStatus? status, DateTime? dueDate, int skip, int take, CancellationToken cancellationToken = default)
     {
         var query = _context.Tasks.AsQueryable();
 
@@ -29,7 +29,14 @@ public class TaskRepository : ITaskRepository
             query = query.Where(t => t.DueDate.HasValue && t.DueDate.Value.Date == dueDate.Value.Date);
         }
 
-        return await query.ToListAsync(cancellationToken);
+        var totalCount = await query.CountAsync(cancellationToken);
+        
+        var items = await query
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync(cancellationToken);
+
+        return (items, totalCount);
     }
 
     public async Task<TaskEntity?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
