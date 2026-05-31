@@ -15,6 +15,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers().AddJsonOptions(opts =>
     opts.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter()));
 
+builder.Services.AddValidatorsFromAssemblyContaining<CreateTaskRequestValidator>();
+
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseInMemoryDatabase("TaskManagementDb"));
 

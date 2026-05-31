@@ -19,9 +19,14 @@ public class TasksController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<ActionResult<PagedResponse<TaskResponse>>> GetAll([FromQuery] TaskStatus? status, [FromQuery] DateTime? dueDate, [FromQuery] PagedRequest paging, CancellationToken cancellationToken)
+    public async Task<ActionResult<PagedResponse<TaskResponse>>> GetAll([FromQuery] TaskStatus? status, [FromQuery] DateTime? dueDate, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("HTTP GET api/tasks");
+
+        if (pageNumber < 1) return BadRequest("pageNumber must be >= 1");
+        if (pageSize < 1 || pageSize > 100) return BadRequest("pageSize must be between 1 and 100");
+
+        var paging = new PagedRequest { PageNumber = pageNumber, PageSize = pageSize };
         var result = await _taskService.GetAllAsync(status, dueDate, paging, cancellationToken);
         return Ok(result);
     }
