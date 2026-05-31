@@ -1,17 +1,18 @@
 # task-management-api
 
-API RESTful para gestão de tarefas desenvolvida seguindo os princípios da Clean Architecture e Domain-Driven Design.
+API RESTful para gestão de tarefas desenvolvida seguindo os princípios de Clean Architecture e Domain-Driven Design.
 
 ## Arquitetura
 
-O sistema é estruturado em quatro camadas principais seguindo os princípios da Clean Architecture para garantir a independência de frameworks e a testabilidade. A camada de Domínio contém o núcleo das regras de negócio e não possui dependências externas o que assegura que as políticas da aplicação sejam preservadas. A camada Application orquestra os fluxos de dados enquanto a Infrastructure lida com a persistência e a API expõe os endpoints para consumo externo. Essa separação clara de responsabilidades permite que cada componente seja modificado ou substituído sem afetar as demais partes do software de forma imprevisível.
+O sistema é estruturado em quatro camadas (Domain, Application, Infrastructure, API) que garantem a separação de responsabilidades e alta testabilidade. A camada de Domínio contém as entidades e regras de negócio sem dependências externas, garantindo que o núcleo da aplicação seja independente. A camada Application orquestra os casos de uso, enquanto a Infrastructure gerencia a persistência de dados. A camada API expõe os recursos através de endpoints RESTful. Essa arquitetura facilita a manutenção e a evolução do projeto, isolando mudanças tecnológicas das regras de negócio.
 
 ## Tecnologias
 
 - .NET 8
 - ASP.NET Core
-- EF Core InMemory
-- Swashbuckle
+- Entity Framework Core InMemory
+- FluentValidation
+- Swashbuckle (Swagger)
 - xUnit
 - Moq
 
@@ -28,7 +29,7 @@ dotnet restore
 dotnet run --project TaskManagement.API
 ```
 
-O Swagger estará disponível em http://localhost:5000/swagger
+O Swagger estará disponível em http://localhost:5055/swagger
 
 ## Testes
 
@@ -40,29 +41,80 @@ dotnet test
 
 | Método | Rota | Descrição |
 | :--- | :--- | :--- |
-| GET | /api/tasks | Lista tarefas com filtros opcionais de status e data |
-| GET | /api/tasks/{id} | Obtém os detalhes de uma tarefa específica por ID |
+| GET | /api/tasks | Lista tarefas com filtros e paginação opcionais |
+| GET | /api/tasks/{id} | Retorna uma tarefa pelo Id |
 | POST | /api/tasks | Cria uma nova tarefa |
-| PUT | /api/tasks/{id} | Atualiza os dados de uma tarefa existente |
-| DELETE | /api/tasks/{id} | Remove uma tarefa do sistema |
+| PUT | /api/tasks/{id} | Atualiza uma tarefa existente |
+| DELETE | /api/tasks/{id} | Remove uma tarefa |
+
+## Parâmetros de listagem
+
+| Parâmetro  | Tipo     | Descrição                                      |
+|------------|----------|------------------------------------------------|
+| status     | string?  | Filtra por status: Pending, InProgress, Completed |
+| dueDate    | DateTime?| Filtra por data de vencimento (yyyy-MM-dd)     |
+| pageNumber | int      | Número da página (default: 1, mínimo: 1)       |
+| pageSize   | int      | Itens por página (default: 10, máximo: 100)    |
 
 ## Exemplos
 
-Criar uma tarefa:
+Exemplo 1 — curl para POST criar uma tarefa:
 ```bash
-curl -X POST http://localhost:5000/api/tasks \
+curl -X POST http://localhost:5055/api/tasks \
 -H "Content-Type: application/json" \
--d '{"title": "Implementar testes", "status": "Pending"}'
+-d '{
+  "title": "Revisar documentação",
+  "description": "Verificar endpoints no Swagger",
+  "dueDate": "2025-12-31",
+  "status": "Pending"
+}'
 ```
 
-Listar tarefas pendentes:
+Exemplo 2 — curl GET listando tarefas pendentes com paginação:
 ```bash
-curl "http://localhost:5000/api/tasks?status=Pending"
+curl "http://localhost:5055/api/tasks?status=Pending&pageNumber=1&pageSize=5"
+```
+
+Exemplo 3 — Formato de resposta paginada:
+```json
+{
+  "items": [...],
+  "totalCount": 42,
+  "pageNumber": 1,
+  "pageSize": 5,
+  "totalPages": 9,
+  "hasNextPage": true
+}
+```
+
+## Validações
+
+| Campo       | Regra                                              |
+|-------------|-----------------------------------------------------|
+| Title       | Obrigatório, máximo 200 caracteres, sem espaços brancos |
+| Description | Máximo 2000 caracteres (quando informado)           |
+| DueDate     | Não pode ser uma data no passado (quando informada) |
+| Status      | Deve ser um valor válido do enum                    |
+
+## Respostas de erro
+
+A API retorna erros no formato ProblemDetails (RFC 7807) contendo os campos: type, title, status, detail, traceId.
+
+Exemplo de erro 400:
+```json
+{
+  "type": "",
+  "title": "Validation Error",
+  "status": 400,
+  "detail": "Due date cannot be in the past.",
+  "traceId": "00-abc123..."
+}
 ```
 
 ## Decisões técnicas
 
-- Utilização do EF Core InMemory para simplificar a execução do protótipo sem necessidade de banco de dados externo.
-- Implementação de um middleware de exceções global para padronizar respostas de erro e evitar repetição de blocos try/catch.
-- Uso de DTOs para separar o modelo de persistência das interfaces de entrada e saída da API.
-- Configuração de enums como string no JSON para melhorar a legibilidade das respostas e facilitar o consumo.
+1. EF Core InMemory — sem necessidade de banco externo para rodar ou testar.
+2. FluentValidation — regras de negócio separadas do DTO, testáveis isoladamente.
+3. Middleware de exceções — tratamento centralizado retornando ProblemDetails padronizado.
+4. DTOs — desacoplam o contrato da API da entidade de domínio.
+5. Paginação — evita retornar listas sem limite, padrão esperado em APIs de produção.
