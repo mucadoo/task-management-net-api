@@ -34,6 +34,7 @@ public class TaskService : ITaskService
 
     public async Task<TaskResponse> CreateAsync(CreateTaskRequest request, CancellationToken cancellationToken = default)
     {
+        var now = DateTime.UtcNow;
         var task = new TaskEntity
         {
             Id = Guid.NewGuid(),
@@ -41,8 +42,8 @@ public class TaskService : ITaskService
             Description = request.Description,
             DueDate = request.DueDate,
             Status = request.Status,
-            CreatedAt = DateTime.UtcNow,
-            UpdatedAt = DateTime.UtcNow
+            CreatedAt = now,
+            UpdatedAt = now
         };
 
         await _taskRepository.AddAsync(task, cancellationToken);
