@@ -19,6 +19,8 @@ public class TasksController : ControllerBase
     }
 
     [HttpGet]
+    [ProducesResponseType(typeof(PagedResponse<TaskResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<PagedResponse<TaskResponse>>> GetAll([FromQuery] TaskStatus? status, [FromQuery] DateTime? dueDate, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, CancellationToken cancellationToken = default)
     {
         _logger.LogInformation("HTTP GET api/tasks");
@@ -32,6 +34,8 @@ public class TasksController : ControllerBase
     }
 
     [HttpGet("{id:guid}")]
+    [ProducesResponseType(typeof(TaskResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TaskResponse>> GetById(Guid id, CancellationToken cancellationToken)
     {
         _logger.LogInformation("HTTP GET api/tasks/{Id}", id);
@@ -40,6 +44,8 @@ public class TasksController : ControllerBase
     }
 
     [HttpPost]
+    [ProducesResponseType(typeof(TaskResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<TaskResponse>> Create([FromBody] CreateTaskRequest request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("HTTP POST api/tasks");
@@ -48,6 +54,9 @@ public class TasksController : ControllerBase
     }
 
     [HttpPut("{id:guid}")]
+    [ProducesResponseType(typeof(TaskResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<ActionResult<TaskResponse>> Update(Guid id, [FromBody] UpdateTaskRequest request, CancellationToken cancellationToken)
     {
         _logger.LogInformation("HTTP PUT api/tasks/{Id}", id);
@@ -56,6 +65,8 @@ public class TasksController : ControllerBase
     }
 
     [HttpDelete("{id:guid}")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
     {
         _logger.LogInformation("HTTP DELETE api/tasks/{Id}", id);
